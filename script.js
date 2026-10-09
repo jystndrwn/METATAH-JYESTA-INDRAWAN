@@ -30,11 +30,7 @@ const db  = getFirestore(app);
 // ============================================================
 //  UCAPAN BAWAAN (hanya ditampilkan di UI, tidak disimpan ulang ke Firestore)
 // ============================================================
-const defaultWishes = [
-    { name: 'Hendra',                    message: 'Selamat gigi baru lin sorry gabisa dateng 😭', attendance: 'Tidak Hadir' },
-    { name: 'desi wardani ( alumni sd )', message: 'semoga lancar sampai hari H na',               attendance: 'Hadir'       },
-    { name: 'Junk ary',                  message: 'Rahajeng metatah/untu anyar ya gek liana cantikk. Rahayu kenanggih swaha 🙏😇💛❤️', attendance: 'Tidak Hadir' }
-];
+const defaultWishes = [];
 
 // ============================================================
 document.addEventListener('DOMContentLoaded', function () {
