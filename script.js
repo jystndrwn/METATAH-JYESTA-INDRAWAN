@@ -1,22 +1,57 @@
+// ============================================================
+//  KONFIGURASI FIREBASE
+//  Ganti nilai di bawah dengan config dari Firebase Console Anda:
+//  Firebase Console → Project Settings → Your apps → Web app → Config
+// ============================================================
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import {
+    getFirestore,
+    collection,
+    addDoc,
+    onSnapshot,
+    query,
+    orderBy,
+    serverTimestamp
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const firebaseConfig = {
+    apiKey:            "AIzaSyDrpa04ObffFh2xjCY39KMRpmkGPh8XgoQ",
+    authDomain:        "um-jyesta-indrawan.firebaseapp.com",
+    projectId:         "um-jyesta-indrawan",
+    storageBucket:     "um-jyesta-indrawan.firebasestorage.app",
+    messagingSenderId: "942276168597",
+    appId:             "1:942276168597:web:7d73628f0ea1280678849c",
+    measurementId:     "G-GCBY97XTB4"
+};
+
+const app = initializeApp(firebaseConfig);
+const db  = getFirestore(app);
+
+// ============================================================
+//  UCAPAN BAWAAN (hanya ditampilkan di UI, tidak disimpan ulang ke Firestore)
+// ============================================================
+const defaultWishes = [
+    { name: 'Hendra',                    message: 'Selamat gigi baru lin sorry gabisa dateng 😭', attendance: 'Tidak Hadir' },
+    { name: 'desi wardani ( alumni sd )', message: 'semoga lancar sampai hari H na',               attendance: 'Hadir'       },
+    { name: 'Junk ary',                  message: 'Rahajeng metatah/untu anyar ya gek liana cantikk. Rahayu kenanggih swaha 🙏😇💛❤️', attendance: 'Tidak Hadir' }
+];
+
+// ============================================================
 document.addEventListener('DOMContentLoaded', function () {
 
-    // =========================================================
     // 1. Nama Tamu dari URL (?to=Nama)
-    // =========================================================
     const urlParams = new URLSearchParams(window.location.search);
     const guestName = urlParams.get('to') || 'Bapak/Ibu/Saudara/i';
     document.getElementById('guest-name').innerText = guestName;
 
-    // =========================================================
     // 2. Logika "Buka Undangan" & Animasi Loading
-    // =========================================================
-    const btnOpen     = document.getElementById('btn-open');
-    const coverPage   = document.getElementById('cover-page');
+    const btnOpen      = document.getElementById('btn-open');
+    const coverPage    = document.getElementById('cover-page');
     const coverContent = document.getElementById('cover-content');
-    const loadingArt  = document.getElementById('loading-art');
-    const mainContent = document.getElementById('main-content');
-    const bgMusic     = document.getElementById('bg-music');
-    const btnMusic    = document.getElementById('btn-music');
+    const loadingArt   = document.getElementById('loading-art');
+    const mainContent  = document.getElementById('main-content');
+    const bgMusic      = document.getElementById('bg-music');
+    const btnMusic     = document.getElementById('btn-music');
     let isPlaying = false;
 
     btnOpen.addEventListener('click', function () {
@@ -41,9 +76,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }, 3000);
     });
 
-    // =========================================================
     // 3. Kontrol Musik
-    // =========================================================
     btnMusic.addEventListener('click', function () {
         if (isPlaying) {
             bgMusic.pause();
@@ -57,40 +90,27 @@ document.addEventListener('DOMContentLoaded', function () {
         isPlaying = !isPlaying;
     });
 
-    // =========================================================
     // 4. Hitung Mundur (Countdown)
-    // =========================================================
     const eventDate = new Date('Oct 15, 2026 14:00:00').getTime();
-
     const countdown = setInterval(function () {
         const now      = new Date().getTime();
         const distance = eventDate - now;
-
         if (distance < 0) {
             clearInterval(countdown);
             const cc = document.querySelector('.countdown-container');
-            if (cc) cc.innerHTML = "<h3 style='color:#e6c883;'>Acara Telah Berlangsung / Selesai</h3>";
+            if (cc) cc.innerHTML = "<h3 style='color:#e6c883;'>Acara Telah Berlangsung 🙏</h3>";
             return;
         }
-
-        const days    = Math.floor(distance / (1000 * 60 * 60 * 24));
-        const hours   = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-        const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-        const seconds = Math.floor((distance % (1000 * 60)) / 1000);
-
-        document.getElementById('days').innerText    = pad(days);
-        document.getElementById('hours').innerText   = pad(hours);
-        document.getElementById('minutes').innerText = pad(minutes);
-        document.getElementById('seconds').innerText = pad(seconds);
+        document.getElementById('days').innerText    = pad(Math.floor(distance / 86400000));
+        document.getElementById('hours').innerText   = pad(Math.floor((distance % 86400000) / 3600000));
+        document.getElementById('minutes').innerText = pad(Math.floor((distance % 3600000) / 60000));
+        document.getElementById('seconds').innerText = pad(Math.floor((distance % 60000) / 1000));
     }, 1000);
 
     function pad(n) { return n < 10 ? '0' + n : n; }
 
-    // =========================================================
     // 5. Galeri Khusus (Password Protected)
-    // =========================================================
-    const GALLERY_PASSWORD = '07042008';
-
+    const GALLERY_PASSWORD    = '07042008';
     const btnSecretGallery    = document.getElementById('btn-secret-gallery');
     const secretPassContainer = document.getElementById('secret-password-container');
     const secretPasswordInput = document.getElementById('secret-password');
@@ -111,9 +131,7 @@ document.addEventListener('DOMContentLoaded', function () {
         });
 
         btnSubmitPassword.addEventListener('click', checkPassword);
-        secretPasswordInput.addEventListener('keydown', function (e) {
-            if (e.key === 'Enter') checkPassword();
-        });
+        secretPasswordInput.addEventListener('keydown', e => { if (e.key === 'Enter') checkPassword(); });
     }
 
     function checkPassword() {
@@ -129,33 +147,32 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
-    // =========================================================
-    // 6. RSVP / Kirim Ucapan — disimpan di localStorage
-    // =========================================================
-    const rsvpForm    = document.getElementById('rsvp-form');
-    const wishesList  = document.getElementById('wishes-list');
+    // ============================================================
+    // 6. RSVP / Kirim Ucapan — Firebase Firestore (real-time, semua orang bisa lihat)
+    // ============================================================
+    const rsvpForm        = document.getElementById('rsvp-form');
+    const wishesContainer = document.getElementById('wishes-container');
+    const submitBtn       = rsvpForm ? rsvpForm.querySelector('.btn-submit-rsvp') : null;
 
-    // Ucapan awal bawaan
-    const defaultWishes = [
+    // Render ucapan bawaan dulu
+    defaultWishes.forEach(w => renderWish(w, wishesContainer, false));
 
-    ];
+    // Dengarkan perubahan Firestore secara real-time (terbaru di atas)
+    const q = query(collection(db, 'ucapan'), orderBy('waktu', 'desc'));
+    onSnapshot(q, (snapshot) => {
+        snapshot.docChanges().forEach((change) => {
+            if (change.type === 'added') {
+                // Sisipkan di paling atas (sebelum ucapan bawaan)
+                renderWish(change.doc.data(), wishesContainer, true);
+            }
+        });
+    }, (error) => {
+        console.error('Firestore error:', error);
+    });
 
-    // Ambil ucapan dari localStorage (kalau ada)
-let storedWishes = [];
-try {
-    storedWishes = JSON.parse(localStorage.getItem('jyesta_wishes')) || [];
-} catch (e) {
-    storedWishes = [];
-}
-
-    // Render semua ucapan (default dulu, lalu yang tersimpan)
-    wishesList.innerHTML = '';
-    const allWishes = [...defaultWishes, ...storedWishes];
-    allWishes.forEach(function (w) { renderWish(w, false); });
-
-    // Submit form
+    // Submit ucapan baru ke Firestore
     if (rsvpForm) {
-        rsvpForm.addEventListener('submit', function (e) {
+        rsvpForm.addEventListener('submit', async function (e) {
             e.preventDefault();
 
             const name       = document.getElementById('rsvp-name').value.trim();
@@ -164,35 +181,38 @@ try {
 
             if (!name || !message || !attendance) return;
 
-            const wish = { name, message, attendance };
+            // Tampilkan loading di tombol
+            submitBtn.disabled  = true;
+            submitBtn.innerText = 'Mengirim...';
 
-            // Simpan ke localStorage
-            storedWishes.push(wish);
             try {
-                localStorage.setItem('jyesta_wishes', JSON.stringify(storedWishes));
-            } catch (e) {}
-
-            // Tampilkan di UI
-            renderWish(wish, true);
-
-            // Scroll ke ucapan terbaru
-            wishesList.scrollTop = wishesList.scrollHeight;
-
-            // Reset form
-            rsvpForm.reset();
+                await addDoc(collection(db, 'ucapan'), {
+                    name,
+                    message,
+                    attendance,
+                    waktu: serverTimestamp()
+                });
+                rsvpForm.reset();
+            } catch (err) {
+                console.error('Gagal kirim ucapan:', err);
+                alert('Gagal mengirim ucapan. Periksa koneksi internet Anda.');
+            } finally {
+                submitBtn.disabled  = false;
+                submitBtn.innerText = 'Kirimkan Ucapan';
+            }
         });
     }
 
-    function renderWish(wish, isNew) {
-        const initial   = encodeURIComponent(wish.name.charAt(0).toUpperCase());
-        const avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(wish.name)}&background=random&color=fff&size=46`;
+    function renderWish(wish, container, prepend) {
+        const avatarUrl  = `https://ui-avatars.com/api/?name=${encodeURIComponent(wish.name)}&background=random&color=fff&size=46`;
+        const attendance = wish.attendance || '';
 
         let badgeClass = 'badge-maybe';
-        let badgeLabel = wish.attendance;
-        if (wish.attendance === 'Akan Hadir' || wish.attendance === 'Hadir') {
+        let badgeLabel = attendance;
+        if (attendance === 'Hadir' || attendance === 'Akan Hadir') {
             badgeClass = 'badge-present';
             badgeLabel = 'Akan Hadir';
-        } else if (wish.attendance === 'Tidak Hadir') {
+        } else if (attendance === 'Tidak Hadir') {
             badgeClass = 'badge-absent';
         }
 
@@ -211,36 +231,34 @@ try {
             </div>
         `;
 
-        if (isNew) {
-            wishesList.insertBefore(div, wishesList.firstChild);
+        if (prepend && container.firstChild) {
+            container.insertBefore(div, container.firstChild);
         } else {
-            wishesList.appendChild(div);
+            container.appendChild(div);
         }
     }
 
     function escapeHtml(str) {
-        return str.replace(/&/g, '&amp;')
-                  .replace(/</g, '&lt;')
-                  .replace(/>/g, '&gt;')
-                  .replace(/"/g, '&quot;')
-                  .replace(/'/g, '&#039;');
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
     }
 
-    // =========================================================
-    // 7. Scroll Fade-in untuk setiap section
-    // =========================================================
+    // 7. Scroll Fade-in
     function initScrollFade() {
         const sections = document.querySelectorAll('.fade-in-section');
-        const observer = new IntersectionObserver(function (entries) {
-            entries.forEach(function (entry) {
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
                 if (entry.isIntersecting) {
                     entry.target.classList.add('visible');
                     observer.unobserve(entry.target);
                 }
             });
         }, { threshold: 0.12 });
-
-        sections.forEach(function (s) { observer.observe(s); });
+        sections.forEach(s => observer.observe(s));
     }
 
 });
